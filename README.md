@@ -20,4 +20,4 @@ You are a Data analyst at Carrefour Kenya and are currently undertaking a projec
 ## Rpubs Publication
 
 - Dimensionality Reduction & Feature Selection [Click Here](https://rpubs.com/Jane-/914108)
-- Association Rules & Anomaly Detection [Click Here]()
+- Association Rules & Anomaly Detection [Click Here](https://rpubs.com/Jane-/914140)
