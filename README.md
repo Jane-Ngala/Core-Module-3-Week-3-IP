@@ -13,11 +13,11 @@ You are a Data analyst at Carrefour Kenya and are currently undertaking a projec
 - Data Cleaning
 - EDA
 - Dimensionality Reduction
-- Feature Selectio
+- Feature Selection
 - Association Rules
 - Anomaly detection
 
 ## Rpubs Publication
 
-- Dimensionality Reduction & Feature Selection [Click Here]()
+- Dimensionality Reduction & Feature Selection [Click Here](https://rpubs.com/Jane-/914108)
 - Association Rules & Anomaly Detection [Click Here]()
