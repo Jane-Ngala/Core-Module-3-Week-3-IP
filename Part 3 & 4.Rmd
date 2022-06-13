@@ -1,0 +1,263 @@
+---
+title: "Core Module 3 Week 3 IP (Part 3&4)"
+author: "Jane Ngala"
+date: '2022-06-11'
+output: html_document
+---
+
+**Part 3: Association Rules**
+
+```{r}
+# Loading Libraries
+
+library(arules)
+library(tidyverse)
+library(arulesViz)
+
+```
+
+
+```{r}
+# Loading dataset
+
+url<-"http://bit.ly/SupermarketDatasetII"
+sales <- read.transactions(url, sep = ',')
+head(sales)
+```
+
+```{r}
+# Previewing top items 
+
+inspect(sales[1:4])
+```
+
+```{r}
+# Previewing summary statistic
+
+summary(sales)
+```
+
+- The most frequent items ae; mineral water, eggs, spaghetti, french fries and chocolate
+
+```{r}
+# Previewing the labels of items
+
+items <- as.data.frame(itemLabels(sales))
+colnames(items) <- "Item"
+head(items, 4)    
+tail(items,4)
+```
+
+```{r}
+# Checking the frequency of first 10 labels
+
+itemFrequency(sales[, 1:10],type = "absolute")
+```
+
+```{r}
+# plotting the frequency of items
+
+itemFrequencyPlot(sales, topN = 10,col="green")
+itemFrequencyPlot(sales, support = 0.1,col="blue")
+```
+
+
+```{r}
+# Checking the rules of the data at 80% confidence level
+
+rules <- apriori (sales, parameter = list(supp = 0.001, conf = 0.8))
+rules
+```
+
+- A set of 74 rules generated at 80% confidence level and 0.001 support
+
+```{r}
+# Summary of the 1st 5  rules
+
+inspect(rules[1:5])
+
+```
+
+- Rue 1: If a customer purchases frozen smoothie and spinach, there is a 88.9% chance of them buying mineral water
+- Rule 2: If a customer purchases bacon and pancakes, there is a 81.2% probability of them purchasing spaghetti as well
+- Rule 3: If a customer purchases non-fat milk and turkey, there is a 81.8% chance of them purchasing mineral water as well
+- Rule 4:If a customer purchases ground beef and non-fat milk, there is a 85.7% probability of them purchasing mineral water as well
+- Rule 5: If a customer purchases mushroom cream sauce and pasta, there is a 95% chance of them purchasing escalope as well
+
+
+```{r}
+# Visualization of the association rules
+
+subrules <- head(rules, n = 10, by = "confidence")
+plot(subrules, method = "graph" ,   engine = "htmlwidget")
+plot(subrules, method = "graph" ,   engine = "default")
+plot(subrules, method = "paracoord")
+
+```
+
+
+**Part 4: Anomaly Detection**
+
+***1. Loading libraries and dataset***
+
+
+```{r}
+# Loading libraries
+
+library(tidyverse)
+library(anomalize)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(tidyverse)
+library(tibbletime)
+library(dplyr)
+library(psych)
+library(devtools)
+library(Rcpp)
+library(anomaly)
+library(ggplot2)
+
+```
+
+```{r}
+# Loading dataset
+
+url <- "http://bit.ly/CarreFourSalesDataset"
+
+sales_forecast<-read.csv(url)
+```
+
+***2. Checking the data***
+
+```{r}
+# Previewing the top of the dataset
+
+head(sales_forecast)
+```
+
+```{r}
+# Previewing bottom of the dataset
+
+tail(sales_forecast)
+```
+
+```{r}
+# Previewing shape
+
+cat("The dataset has", nrow(sales_forecast), "rows", "and", ncol(sales_forecast), "columns")
+
+```
+
+```{r}
+# Checking Data types
+
+str(sales_forecast)
+```
+
+- Sales has the appropriate datatype; date should e changed to datetime
+
+```{r}
+sales_forecast$Date <- as.Date(sales_forecast$Date , format = "%m/%d/%Y")
+head(sales_forecast)
+
+unique(sales_forecast$Date)
+sales_forecast <- as_tbl_time(sales_forecast , index= Date)
+```
+
+***3. Data Cleaning***
+
+```{r}
+# Tidying column names
+
+colnames(sales_forecast)
+```
+
+- Columns are uniformly labeled
+
+```{r}
+# Checking for number of missing values
+
+length(which(is.na(sales_forecast)))
+```
+
+- No missing values
+
+```{r}
+# Checking for duplicates
+
+sum(duplicated(sales_forecast))
+```
+
+- No duplicates
+
+```{r}
+# Checking for outliers
+
+boxplot(sales_forecast$Sales)
+```
+
+```{r}
+# Listing the outliers
+
+boxplot.stats(sales_forecast$Sales)$out
+```
+
+- The outliers are valid
+
+***4. EDA***
+
+```{r}
+# Statistical summary of the dataset
+
+describe(sales_forecast$Sales)
+
+```
+
+```{r}
+# Plotting the sales data
+
+ggplot(sales_forecast, aes(x=Date, y=Sales, color=Sales)) + geom_line()
+```
+
+- It is evident that there are high sale spikes at different intervals between Jan-April
+
+```{r}
+# Frequency distribution of sales
+
+hist(sales_forecast$Sales, col = 'gold', ylim = c(0, 250))
+
+```
+
+***5. Anomaly Detection***
+
+```{r}
+# Performing anomaly detection using Seasonal Hybrid ESD Test
+
+anomaly.detect <- sales_forecast %>%group_by(Date) %>%summarise(totalsales =sum(eval(as.symbol("Sales")))) %>% ungroup() %>%time_decompose(totalsales) %>%  anomalize(remainder, method = "gesd", alpha = 0.05, max_anoms = 0.2) %>% 
+  
+plot_anomaly_decomposition()
+anomaly.detect
+```
+
+```{r}
+# Plotting clearer points to check the months that have anomalies
+
+sales_forecast %>%  group_by(Date) %>%  summarise(totalsales = sum(Sales),.group='drop') %>%  time_decompose(totalsales, method = "stl", frequency = "auto", trend = "auto") %>%  anomalize(remainder, method = "gesd") %>%  time_recompose() %>%
+
+# Anomaly Visualization
+  
+  plot_anomalies(time_recomposed =T,ncol = 6, color_no = "red", color_yes = "green",fill_ribbon ="yellow")
+  
+```
+
+- Anomalies are observed in early and mid February, as well as mid-March
+
+***6. Conclusion***
+
+- The sales data has anomalies as seen above, though not many.
+
+***7. Recommendation***
+
+- The marketing team should investigate the spike in sales and the anomalies to ascertain they are not fraudulent.
+
