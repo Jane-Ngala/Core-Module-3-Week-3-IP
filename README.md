@@ -1,6 +1,6 @@
 # Core-Module-3-Week-3-IP
 
-<img src="https://user-images.githubusercontent.com/99291087/173269456-35bea369-e95e-47d8-b87c-04ecd644096f.jpg" width="950" height="550" />
+<img src="https://user-images.githubusercontent.com/99291087/173269679-9d875419-6bbf-4cf9-9386-6a69a8105ebd.jpg" width="950" height="550" />
 
 
 ## Carrefour Supermarket Sales Analysis
