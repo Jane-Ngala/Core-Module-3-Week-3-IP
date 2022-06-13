@@ -1,6 +1,6 @@
 # Core-Module-3-Week-3-IP
 
-<img src="https://www.capitalfm.co.ke/business/2020/06/carrefour-opens-eighth-store-in-nairobi" width="950" height="550" />
+<img src="https://user-images.githubusercontent.com/99291087/173269456-35bea369-e95e-47d8-b87c-04ecd644096f.jpg" width="950" height="550" />
 
 
 ## Carrefour Supermarket Sales Analysis
