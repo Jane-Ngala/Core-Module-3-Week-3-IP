@@ -1,0 +1,395 @@
+---
+title: "Core Module 3 Week 3 IP (Part 1&2)"
+author: "Jane Ngala"
+date: '2022-06-10'
+output: html_document
+---
+
+             **PART 1 & 2**
+
+**1. Defining the Question**
+
+ ***(a) Specifying the Question***
+ 
+- To Identify the most relevant marketing strategies that will result in the highest number of sales.
+
+  ***(b) Metric of Success***
+  
+- The project will be considered a success if the most relevant marketing strategies that will result in the highest number of sales are identified.
+
+  ***(c) Understanding the context***
+  
+- You are a Data analyst at Carrefour Kenya and are currently undertaking a project that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax). Your project has been divided into four parts where you'll explore a recent marketing dataset by performing various unsupervised learning techniques and later providing recommendations based on your insights.
+
+  ***(d) Experimental Design***
+  
+- Load the dataset
+- Find and deal with outliers, anomalies, and missing data within the dataset.
+- Perform  univariate and bivariate analysis.
+- Perform Dimensionality Reduction
+- Perform Feature Selection
+- Create Association Rules
+- Anomaly Detection
+- Conclusions and Recommendations
+
+  ***(e) Appropriateness of Data***
+- The data is appropriate and reliable.
+
+**2. Loading Libraries and Dataset**
+
+```{r}
+# Loading libraries
+
+library(data.table)
+library (plyr)
+library(ggplot2)
+library(ggcorrplot)
+library(tidyverse)
+library(magrittr)
+library(modelr)
+library(broom)
+library(caret)
+library(rpart)
+library(dplyr)
+library(psych)
+library(devtools)
+library(ggbiplot)
+library(factoextra)
+library(wskm)
+library(clustvarsel)
+library(mclust)
+library(corrplot)
+```
+
+```{r}
+# Loading Dataset
+
+url<-"http://bit.ly/CarreFourDataset"
+carrefour<-read.csv(url)
+```
+
+**3. Checking the Data**
+
+```{r}
+#view(carrefour)
+```
+
+
+```{r}
+# Previewing top of the data
+
+head(carrefour)
+```
+
+```{r}
+# Previewing top of the data
+
+tail(carrefour)
+```
+
+```{r}
+# Previewing shape
+
+cat("The dataset has", nrow(carrefour), "rows", "and", ncol(carrefour), "columns")
+
+```
+
+```{r}
+# Checking Data types
+
+str(carrefour)
+```
+- All columns have appropriate data types
+
+**4. Data Cleaning**
+
+```{r}
+# Checking for number of missing values
+
+length(which(is.na(carrefour)))
+
+```
+- The dataset is complete; it has no missing values
+
+```{r}
+# Checking for duplicates
+
+sum(duplicated(carrefour))
+```
+- No duplicates in the data.
+
+```{r}
+# Tidying column names
+
+colnames(carrefour)
+```
+- Column names are not uniform; change all of them to lowercase
+
+```{r}
+
+colnames(carrefour) = tolower(colnames(carrefour))
+colnames(carrefour)
+```
+
+```{r}
+# Checking for outliers
+# Selecting numerical columns
+
+cols_num  <- unlist(lapply(carrefour, is.numeric))
+carr_num <- carrefour[ ,cols_num]
+boxplot(carr_num)
+```
+
+- OUtliers are present in the columns tax, cogs, gross income and total
+
+```{r}
+# Finding total number of outliers
+
+sum(carrefour$tax < quantile(carrefour$tax, p = 0.25)- 1.5 * IQR(carrefour$tax)) + sum(carrefour$tax > quantile(carrefour$tax, p = 0.75) + 1.5 * IQR(carrefour$tax))
+sum(carrefour$cogs < quantile(carrefour$cogs, p = 0.25)- 1.5 * IQR(carrefour$cogs)) + sum(carrefour$cogs > quantile(carrefour$cogs, p = 0.75) + 1.5 * IQR(carrefour$cogs))
+sum(carrefour$gross.income < quantile(carrefour$gross.income, p = 0.25)- 1.5 * IQR(carrefour$gross.income)) + sum(carrefour$gross.income > quantile(carrefour$gross.income, p = 0.75) + 1.5 * IQR(carrefour$gross.income))
+sum(carrefour$total < quantile(carrefour$total, p = 0.25)- 1.5 * IQR(carrefour$total)) + sum(carrefour$total > quantile(carrefour$total, p = 0.75) + 1.5 * IQR(carrefour$total))
+```
+
+```{r}
+# Listing the outliers
+
+boxplot.stats(carrefour$tax)$out
+boxplot.stats(carrefour$cogs)$out
+boxplot.stats(carrefour$gross.income)$out
+boxplot.stats(carrefour$total)$out
+
+```
+- Outliers are valid.
+
+**5. EDA**
+
+```{r}
+# Statistical summary of the numerical columns
+
+describe(carr_num)
+```
+
+ ***(i) Univariate Analysis***
+ 
+```{r}
+# Visualization using barplots
+
+par(mfrow = c(2,2), mar = c(4,3,2,2))
+barplot(table(carrefour$invoice.id),main = "Invoice ID")
+barplot(table(carrefour$branch),main = "Branch")
+barplot(table(carrefour$customer.type),main = "Customer Type")
+barplot(table(carrefour$gender),main = "Gender")
+barplot(table(carrefour$product.line),main = "Product Line")
+barplot(table(carrefour$date),main = "Date")
+barplot(table(carrefour$time),main = "Time")
+barplot(table(carrefour$payment),main = "Payment")
+
+```
+
+- Branch A has a slightly higher customer base than branch B and C
+- Distribution of gender among the customers is equal
+- There is an equal number of member customers and normal customers
+- Fashion accessories is the most popular product line
+- The most popular mode of payment is via Ewallet followed by cash
+
+```{r}
+# Visualization using Histograms
+
+par(mfrow = c(2,2), mar = c(5,4,2,2))
+hist(carrefour$unit.price,xlab ='Unit Price', main ='Unit Price Histogram')
+hist(carrefour$quantity,xlab ='quantity', main ='Quantity Histogram')
+hist(carrefour$tax,xlab ='tax', main ='Tax Histogram')
+hist(carrefour$cogs,xlab ='cogs', main ='Cogs Histogram')
+hist(carrefour$gross.margin.percentage,xlab ='gross.margin.percentage', main ='Gross Margin % Histogram')
+hist(carrefour$gross.income ,xlab ='gross.income', main ='Gross Income Histogram')
+hist(carrefour$rating,xlab ='rating', main ='Rating Histogram')
+hist(carrefour$total,xlab ='total', main ='Total Histogram')
+
+```
+
+- Data on tax, cogs, gross income and total is skewed to the left.
+
+***(ii) Bivariate Analysis***
+
+```{r}
+# Visualization of relationship between product line and gender
+
+ggplot(carrefour, aes(x=product.line)) + geom_bar(aes(fill = gender),position = "dodge") + theme(axis.text.x = element_text(angle =90, size = 10))
+
+```
+
+- Electronic accessories are mainly purchased by male customers but by a very small margin
+- Fashion accessories are popular among the female customers
+- Food and beverages are mostly purchased by female customers
+- Health and beauty is a product line significantly popular with the male customers
+- The difference between the number of male and female customers that purchase home and lifestyle products is very small
+- Female customers purchase more sports and travel products more than male customers but by a very small margin
+
+```{r}
+# Visualization of relationship between product line and customer type
+
+ggplot(carrefour, aes(x=product.line)) + geom_bar(aes(fill = customer.type), position = 'dodge') + theme(axis.text.x = element_text(angle =90, size = 10))
+```
+
+- Member customers are mostly known for purchase of sports and travel, home and lifestyle, and, food and beverages products.
+- Normal customers mainly purchase from the electronic accessories, fashion accessories, and, health and beauty product lines.
+
+```{r}
+# Visualization of relationship between payment and gender
+
+ggplot(carrefour, aes(x=payment)) + geom_bar(aes(fill = gender), position = "dodge") 
+
+```
+
+- Male customers mainly use the Ewallet mode of payment
+- Female customers mainly use credit card and cash for payment
+
+```{r}
+# Visualization of relationship between unit price and rating
+
+ggplot(carrefour, aes(x=unit.price, y=rating)) + geom_point()
+```
+
+```{r}
+# Visualization of relationship between quantity and rating
+
+ggplot(carrefour, aes(x=quantity, y=rating)) + geom_point()
+```
+
+```{r}
+# Visualization of relationship between tax and rating
+
+ggplot(carrefour, aes(x=tax, y=rating)) + geom_point()
+```
+
+```{r}
+# Plotting the correlations
+
+ggcorrplot(cor(carr_num), type = "lower", outline.col = "black",
+ lab=TRUE,
+ ggtheme = ggplot2::theme_gray,
+ colors = c("#6D9EC1", "white", "#E46726"))
+```
+
+- There is a correlation between most of the independent variables
+- Carry out Dimensionality reduction using PCA.
+
+**6. Implementing the Solution**
+
+***Part 1: Dimensionality Reduction***
+
+```{r}
+# Performing PCA
+# Gross margin percentage has no variance;can't be scaled
+
+carr.pca<-prcomp(carrefour[,c(6,7,8,12,14,15,16)], center = T, scale. = T)
+summary(carr.pca)
+
+```
+- 7 principal components obtained that explain the total variation of the data.
+- PC1 explains 70.3% PC2 14.3% PC3 14.1% PC4 1.3% 
+
+```{r}
+# Looking into the PCA object 
+
+str(carr.pca)
+```
+
+```{r}
+# Plotting PCA
+
+ggbiplot(carr.pca)
+```
+
+```{r}
+# Closer look at the variables
+
+fviz_pca_var(carr.pca, col.var = "blue")
+```
+
+- Features to be used for modelling are rating, unit price, gross income and quantity
+
+
+***Part 2: Feature Selection***
+
+         ***(i) Filter Method***
+
+```{r}
+# Numeric variables
+
+carr<- carrefour[,c(6,7,8,12,14,15,16)]
+head(carr)
+
+```
+
+```{r}
+# Computing correlation matrix
+
+correlationMatrix <- cor(carr)
+
+# Finding attributes that are highly correlated
+
+highlyCorrelated <- findCorrelation(correlationMatrix, cutoff=0.75)
+head(highlyCorrelated)
+
+```
+- The highly correlated features are tax, cogs and total
+
+```{r}
+# Removing the highly correlated features
+
+ carr_new<-carr[,-c(3,4,7)]
+head(carr_new)
+```
+
+```{r}
+# Correlation of selected features
+
+correlationmatrix <- cor(carr_new)
+```
+
+
+```{r}
+# Graphical comparison (before and after feature selection)
+
+par(mfrow = c(1, 2))
+corrplot(correlationMatrix, order = "hclust")
+corrplot(correlationmatrix, order = "hclust")
+```
+
+- Using filter method, the important features are: rating, unit price, quantity and gross income
+
+
+            ***(ii) Wrapper Method***
+
+```{r}
+# Sequential forward greedy search (default)
+
+out = clustvarsel(carr)
+out
+```
+- Features accepted are: quantity,total, unit price and rating
+
+```{r}
+# Computing cluster model
+
+Subset1 = carr[,out$subset]
+model = Mclust(Subset1)
+summary(model)
+```
+
+**7. Conclusion**
+
+- The most relevant features that impact sales are; 
+
+          - The unit price of an item
+          - The quantity of a product available
+          - The total amount of product
+          - The rating of a product
+          
+**8. Recommendations**
+
+- The marketing team should look into making the unit prices favorable for all customers
+- The marketing team should frequently view the ratings and feedback of the products and adjust according to customers' suggestions
+- The marketing team should ensure products are always available and in large quantities in the supermarket and stores.
