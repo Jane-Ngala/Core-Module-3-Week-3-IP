@@ -1,4 +1,4 @@
-# Core-Module-3-Week-3-IP
+# Marketing and Sales Analysis
 
 <img src="https://user-images.githubusercontent.com/99291087/173269679-9d875419-6bbf-4cf9-9386-6a69a8105ebd.jpg" width="950" height="550" />
 
